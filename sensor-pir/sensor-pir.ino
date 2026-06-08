@@ -14,6 +14,8 @@ const int buzzer = 4;
 // Variabel
 bool isGelap = false;
 bool cooldown = false;
+bool menungguVerifikasi = false;
+unsigned long waktuDeteksi = 0;
 unsigned long cooldownStart = 0;
 bool sistemAktif = true;
 bool lastPirState = LOW;
@@ -115,13 +117,9 @@ void setup() {
 
   ledcAttach(buzzer, 2000, 8);
 
-  Serial.println("PIR WARMING UP...");
-  client.publish("sistem/log", "PIR WARMING UP");
-
+  kirimLog("PIR WARMING UP...");
   delay(30000);
-
-  Serial.println("PIR READY");
-  client.publish("sistem/log", "PIR READY");
+  kirimLog("PIR READY");
 }
 
 // Fungsi Main
@@ -158,23 +156,34 @@ void loop() {
   if (currentPirState == HIGH && lastPirState == LOW) {
     kirimLog("GERAKAN TERDETEKSI");
 
-    if (isGelap) {
-      kirimLog("PENYUSUP TERDETEKSI");
-      alarmCyberpunk();
-      client.publish(
-        "sistem/notifikasi",
-        "PENYUSUP!"
-      );
+    menungguVerifikasi = true;
+    waktuDeteksi = millis();
+  }
 
-      cooldown = true;
-      cooldownStart = millis();
-      client.publish(
-        "sistem/status",
-        "COOLDOWN"
-      );
-    } else {
-      kirimLog("STATUS AMAN");
-      return;
+  //verifikasi orang
+  if (menungguVerifikasi) {
+    if (millis() - waktuDeteksi >= 10000) {
+      menungguVerifikasi = false;
+
+      if (isGelap) {
+        kirimLog("PENYUSUP TERDETEKSI");
+        alarmCyberpunk();
+        client.publish(
+          "sistem/notifikasi",
+          "PENYUSUP!"
+        );
+
+        cooldown = true;
+        cooldownStart = millis();
+
+        client.publish(
+          "sistem/status",
+          "COOLDOWN"
+        );
+
+      } else {
+        kirimLog("STATUS AMAN");
+      }
     }
   }
 
