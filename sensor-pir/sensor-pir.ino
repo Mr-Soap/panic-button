@@ -2,8 +2,8 @@
 #include <PubSubClient.h>
 
 // Konfigurasi WiFi & MQTT
-const char* ssid = "Idan";
-const char* password = "12345678";
+const char* ssid = "Ini Wi-Fi Mpa";
+const char* password = "Yours--..-..";
 const char* mqtt_server = "broker.hivemq.com";
 const int mqtt_port = 1883;
 
