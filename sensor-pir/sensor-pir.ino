@@ -170,7 +170,7 @@ void loop() {
         alarmCyberpunk();
         client.publish(
           "sistem/notifikasi",
-          "PENYUSUP!"
+          "PENYUSUP!|RUMAH A"
         );
 
         cooldown = true;

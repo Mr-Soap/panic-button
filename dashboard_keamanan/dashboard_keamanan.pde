@@ -1,7 +1,6 @@
 import processing.serial.*;
 import mqtt.*;
 
-Serial ldrPort;
 MQTTClient client;
 
 // DATA SENSOR
@@ -41,18 +40,11 @@ void setup() {
   client.subscribe("sistem/status");
   client.subscribe("sistem/heartbeat");
   client.subscribe("sistem/heartbeat/ldr");
+  client.subscribe("sistem/notifikasi");
+  client.subscribe("sistem/ldr");
   
   size(1200, 700);
   surface.setTitle("CYBERPUNK SMART SECURITY");
-
-  println(Serial.list());
-
-  // GANTI COM SESUAI PUNYA KALIAN
-  ldrPort = new Serial(this, "COM3", 115200);
-  
-  delay(2000);
-  
-  ldrPort.bufferUntil('\n');
   
   textFont(createFont("Consolas", 20));
   tambahLog("SYSTEM INITIALIZED");
@@ -257,42 +249,6 @@ void drawFooter() {
   text("ESP32 + MQTT + PROCESSING CYBERPUNK DASHBOARD", width/2, height - 20);
 }
 
-// SERIAL EVENT
-
-void serialEvent(Serial port) {
-  String data = port.readStringUntil('\n');
-
-  if (data != null) {
-    data = trim(data);
-    println(data);
-    
-    // DATA DARI LDR (COM3)
-    
-    if (port == ldrPort) {
-      String[] nilai = splitTokens(data, ",");
-      println("DATA LDR -> " + data);
-      println("TOKEN -> " + nilai.length);
-
-      if (nilai.length == 3) {
-        adc = int(nilai[0]);
-        persen = int(nilai[1]);
-        statusLuminansi = nilai[2];
-      }
-    }
-    
-    if (data.equals("SYSTEM READY")) {
-      motionDetected = false;
-      intruderAlert = false;
-      cooldownMode = false;
-    }
-    
-    if (data.equals("INTRUDER ALERT")) {
-      intruderAlert = true;
-      cooldownMode = true;
-    }
-  }
-}
-
 // LOG FUNCTION
 
 void tambahLog(String pesan) {
@@ -363,6 +319,38 @@ void messageReceived(String topic, byte[] payload) {
   String pesan = new String(payload);
   println("MQTT [" + topic + "] : " + pesan);
   
+  if (topic.equals("sistem/ldr")) {
+    String[] nilai = split(pesan, ',');
+    
+    if (nilai.length == 3) {
+
+      adc = int(nilai[0]);
+      persen = int(nilai[1]);
+      statusLuminansi = nilai[2];
+
+      ldrOnline = true;
+      lastLdrHeartbeat = millis();
+    }
+  }
+  
+  if (topic.equals("sistem/notifikasi")) {
+
+    String[] bagian = split(pesan, '|');
+
+    if (bagian.length >= 2) {
+
+      String alert = bagian[0];
+      String rumah = bagian[1];
+
+      if (alert.equals("PENYUSUP!")) {
+
+        intruderAlert = true;
+        motionDetected = true;
+        lastMotionTime = millis();
+      }
+    }
+  }
+  
   if (topic.equals("sistem/log")) {
     tambahLog(pesan);
 
@@ -370,10 +358,6 @@ void messageReceived(String topic, byte[] payload) {
       case "GERAKAN TERDETEKSI":
         motionDetected = true;
         lastMotionTime = millis();
-        break;
-
-      case "PENYUSUP TERDETEKSI":
-        intruderAlert = true;
         break;
 
       case "SYSTEM ARMED":
@@ -396,6 +380,7 @@ void messageReceived(String topic, byte[] payload) {
       cooldownMode = false;
       intruderAlert = false;
       motionDetected = false;
+      lastMotionTime = 0;
       tambahLog("SYSTEM READY");
     }
   }

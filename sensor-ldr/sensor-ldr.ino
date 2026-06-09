@@ -95,11 +95,15 @@ void loop() {
     lastStatus = statusLuminansi;
   }
 
-  String persen = String(persenCahaya);
-  client.publish("sistem/cahaya/persen", persen.c_str());
+  String dataLDR =
+    String(nilaiCahaya) + "," +
+    String(persenCahaya) + "," +
+    statusLuminansi;
+  
+  client.publish("sistem/ldr", dataLDR.c_str());
   
   // Data ke processing
-  Serial.print(nilaiCahaya);
+  Serial.print(nilaiCahaya);\
   Serial.print(",");
   Serial.print(persenCahaya);
   Serial.print(",");
