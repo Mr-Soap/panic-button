@@ -9,7 +9,7 @@ const int mqtt_port = 1883;
 
 // Pin
 const int pirPin = 18;
-const int buzzer = 4;
+const int buzzer = 5;
 
 // Variabel
 bool isGelap = false;

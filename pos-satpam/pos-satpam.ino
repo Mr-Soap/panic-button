@@ -48,9 +48,18 @@ void reconnect() {
       lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("MQTT CONNECT");
+      
       lcd.setCursor(0,1);
       lcd.print("ONLINE");
+
+      lcd.setCursor(0,0);
+      lcd.print("POS SATPAM");
+
+      lcd.setCursor(0,1);
+      lcd.print("STATUS NORMAL");
     } else {
+      Serial.print("MQTT GAGAL. RC=");
+      Serial.println(client.state());
       delay(5000);
     }
   }
@@ -62,12 +71,8 @@ void setup() {
   Serial.begin(115200);
   setup_wifi();
 
-  //setup mqtt
-  client.setServer(mqtt_server, mqtt_port);
-  client.setCallback(callback);
-
   //setup lcd
-  Wire.begin();
+  Wire.begin(21, 22);
 
   lcd.init();
   lcd.backlight();
@@ -76,6 +81,11 @@ void setup() {
   lcd.print("POS SATPAM");
   lcd.setCursor(0,1);
   lcd.print("SIAP");
+
+  //setup mqtt
+  client.setServer(mqtt_server, mqtt_port);
+  client.setCallback(callback);
+  reconnect();
 
   //setup servo
   gateServo.attach(18);
@@ -130,6 +140,8 @@ void loop() {
     reconnect();
   }
   client.loop();
+
+  delay(5000);
 
   static unsigned long lastHeartbeat = 0;
 
